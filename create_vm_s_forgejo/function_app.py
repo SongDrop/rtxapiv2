@@ -78,7 +78,7 @@ async def run_azure_operation(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, func, *args, **kwargs)
 
-@app.route(route="create_vm", methods=["POST", "GET"], auth_level=func.AuthLevel.FUNCTION)
+@app.route(route="create_vm_s_forgejo", methods=["POST", "GET"], auth_level=func.AuthLevel.FUNCTION)
 async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing create_vm request...')
     try:
