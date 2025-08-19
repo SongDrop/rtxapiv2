@@ -60,7 +60,7 @@ def get_function_keys(function_name):
         logger.error(f"Exception fetching keys for function '{function_name}': {e}", exc_info=True)
         return None
 
-@app.route(route="get_function_keys", methods=["GET", "POST"], auth_level=func.AuthLevel.FUNCTION)
+@app.route(route="api_gateway", methods=["GET", "POST"], auth_level=func.AuthLevel.FUNCTION)
 def get_function_keys_http(req: func.HttpRequest) -> func.HttpResponse:
     logger.info("Processing request to retrieve function keys")
 
