@@ -9,8 +9,6 @@ from azure.identity import ClientSecretCredential
 from azure.mgmt.web import WebSiteManagementClient
 import azure.functions as func
 
-#https://medium.com/@ssbmqtjt/how-to-connect-an-azure-function-with-an-azure-key-vault-azure-portal-and-python-bd5140178a7
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -18,6 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.info("Starting application initialization...")
+
+app = func.FunctionApp()
 
 # Environment variables
 SUBSCRIPTION_ID = os.getenv("AZURE_SUBSCRIPTION_ID")
@@ -45,7 +45,6 @@ def get_function_keys(function_name):
             function_name
         )
 
-
         # keys is a dict-like object, get keys as dict
         function_keys = {}
         if keys:
@@ -61,7 +60,8 @@ def get_function_keys(function_name):
         logger.error(f"Exception fetching keys for function '{function_name}': {e}", exc_info=True)
         return None
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="get_function_keys", methods=["GET", "POST"], auth_level=func.AuthLevel.FUNCTION)
+def get_function_keys_http(req: func.HttpRequest) -> func.HttpResponse:
     logger.info("Processing request to retrieve function keys")
 
     try:

@@ -10,8 +10,8 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 import logging
 from azure.mgmt.storage import StorageManagementClient
 import azure.functions as func
+import asyncio
 
- 
 # Configure logging first
 logging.basicConfig(
     level=logging.INFO,
@@ -19,7 +19,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.info("Starting application initialization...")
- 
+
+app = func.FunctionApp()
+
 # Console colors for logs
 class bcolors:
     HEADER = '\033[95m'
@@ -32,7 +34,6 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
-#####
 def print_info(msg):
     logging.info(f"{bcolors.OKBLUE}[INFO]{bcolors.ENDC} {msg}")
 
@@ -48,8 +49,12 @@ def print_warn(msg):
 def print_error(msg):
     logging.info(f"{bcolors.FAIL}[ERROR]{bcolors.ENDC} {msg}")
 
- 
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+async def run_azure_operation(func, *args, **kwargs):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, func, *args, **kwargs)
+
+@app.route(route="hook_vm", methods=["POST", "GET"], auth_level=func.AuthLevel.FUNCTION)
+async def hook_vm(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing hook_vm request...')
  
     try:
@@ -121,7 +126,13 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
  
         # Container storage
         storage_account_name = f"{storage_account_base}provision"
-        storage_config = await create_storage_account(storage_client, resource_group, storage_account_name, location)
+        storage_config = await run_azure_operation(
+            create_storage_account,
+            storage_client,
+            resource_group,
+            storage_account_name,
+            location
+        )
         global AZURE_STORAGE_ACCOUNT_KEY
         AZURE_STORAGE_ACCOUNT_KEY = storage_config["AZURE_STORAGE_KEY"]
         AZURE_STORAGE_URL = storage_config["AZURE_STORAGE_URL"]
@@ -141,14 +152,25 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         blob_name = f"{vm_name}-webhook.json"
 
         # Uploading generated script to storage
-        blob_url_with_sas = await upload_blob_and_generate_sas(blob_service_client, container_name, blob_name, json.dumps(status_data), sas_expiry_hours=2)
+        blob_url_with_sas = await run_azure_operation(
+            upload_blob_and_generate_sas,
+            blob_service_client,
+            container_name,
+            blob_name,
+            json.dumps(status_data),
+            2
+        )
 
         print_success("-----------------------------------------------------")
         print_success(f"Updated json status to Blob Storage: {blob_url_with_sas}")
         print_success("-----------------------------------------------------")
 
         if status == "failed" or status == "completed":
-            storage_client.storage_accounts.delete(resource_group, storage_account_name)
+            await run_azure_operation(
+                storage_client.storage_accounts.delete,
+                resource_group,
+                storage_account_name
+            )
             print_success(f"Deleted storage account '{storage_account_name}'.")
 
         result = {
@@ -172,7 +194,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-async def create_storage_account(storage_client, resource_group_name, storage_name, location):
+def create_storage_account(storage_client, resource_group_name, storage_name, location):
     print_info(f"Creating storage account '{storage_name}' in '{location}'...")
     try:
         try:
@@ -215,7 +237,7 @@ def ensure_container_exists(blob_service_client, container_name):
         print_info(f"Container '{container_name}' likely exists or could not be created: {e}")
     return container_client
 
-async def upload_blob_and_generate_sas(blob_service_client, container_name, blob_name, data, sas_expiry_hours=1):
+def upload_blob_and_generate_sas(blob_service_client, container_name, blob_name, data, sas_expiry_hours=1):
     print_info(f"Uploading blob '{blob_name}' to container '{container_name}'.")
     container_client = ensure_container_exists(blob_service_client, container_name)
     blob_client = container_client.get_blob_client(blob_name)
@@ -234,4 +256,3 @@ async def upload_blob_and_generate_sas(blob_service_client, container_name, blob
     blob_url_with_sas = f"{blob_url}?{sas_token}"
     print_success(f"SAS URL generated for blob '{blob_name}'.")
     return blob_url_with_sas
- 
