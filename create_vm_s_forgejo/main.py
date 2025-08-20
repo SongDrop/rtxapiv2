@@ -24,9 +24,9 @@ from azure.mgmt.dns.models import RecordSet
 from azure.mgmt.storage import StorageManagementClient
 import azure.functions as func
 import aiohttp
-from . import generate_setup
-from . import html_email
-from . import html_email_send
+from create_vm_s_forgejo import generate_setup
+from create_vm_s_forgejo import html_email
+from create_vm_s_forgejo import html_email_send
 
 # Configure logging
 logging.basicConfig(
@@ -36,7 +36,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting application initialization...")
 
-app = func.FunctionApp()
+# Azure Functions v2 imports
+from azure.functions import FunctionApp, HttpRequest, HttpResponse
+
+#app = FunctionApp()
+create_vm_s_forgejo_bp = func.Blueprint()
+
 
 image_reference = {
     'publisher': 'canonical',
@@ -78,8 +83,8 @@ async def run_azure_operation(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, func, *args, **kwargs)
 
-@app.route(route="create_vm_s_forgejo", methods=["POST", "GET"], auth_level=func.AuthLevel.FUNCTION)
-async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
+@create_vm_s_forgejo_bp.route(route="create_vm_s_forgejo", methods=["POST", "GET"], auth_level="function")
+async def create_vm(req: HttpRequest) -> HttpResponse:
     logging.info('Processing create_vm request...')
     try:
         try:
@@ -101,7 +106,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
         
         # Validate required parameters
         if not all([vm_name, resource_group, domain, location, RECIPIENT_EMAILS]):
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({"error": "Missing required parameters"}),
                 status_code=400,
                 mimetype="application/json"
@@ -109,7 +114,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
         
         # Domain validation
         if '.' not in domain or domain.startswith('.') or len(domain.split('.')) > 2:
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({"error": "Invalid domain format"}),
                 status_code=400,
                 mimetype="application/json"
@@ -117,7 +122,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
         
         # VM size validation
         if not check_vm_size_compatibility(vm_size):
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({
                     "error": f"VM size {vm_size} is incompatible",
                     "compatible_sizes": get_compatible_vm_sizes()
@@ -157,7 +162,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
         if not hook_response.get("success") and hook_url:
             error_msg = hook_response.get("error", "Unknown error posting status")
             print_error(f"Initial status update failed: {error_msg}")
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({"error": f"Status update failed: {error_msg}"}),
                 status_code=500,
                 mimetype="application/json"
@@ -203,7 +208,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
                 )
             )
 
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({
                     "message": "VM provisioning started",
                     "status_url": status_url,
@@ -227,7 +232,7 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
                     }
                 }
             )
-            return func.HttpResponse(
+            return HttpResponse(
                 json.dumps({"error": str(ex)}),
                 status_code=500,
                 mimetype="application/json"
@@ -235,12 +240,11 @@ async def create_vm(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as ex:
         logging.exception("Unhandled error in main function:")
-        return func.HttpResponse(
+        return HttpResponse(
             json.dumps({"error": str(ex)}),
             status_code=500,
             mimetype="application/json"
         )
-
 
 async def provision_vm_background(
     credentials,
