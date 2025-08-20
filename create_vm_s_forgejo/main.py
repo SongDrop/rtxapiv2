@@ -84,7 +84,7 @@ async def run_azure_operation(func, *args, **kwargs):
     return await loop.run_in_executor(None, func, *args, **kwargs)
 
 @create_vm_s_forgejo_bp.route(route="create_vm_s_forgejo", methods=["POST", "GET"], auth_level="function")
-async def create_vm(req: HttpRequest) -> HttpResponse:
+async def create_vm_s_forgejo(req: HttpRequest) -> HttpResponse:
     logging.info('Processing create_vm request...')
     try:
         try:
