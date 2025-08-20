@@ -79,12 +79,20 @@ def api_gateway(req: func.HttpRequest) -> func.HttpResponse:
     required_vars = [Config.SUBSCRIPTION_ID, Config.RESOURCE_GROUP, 
                     Config.API_NAME, Config.CLIENT_ID, Config.CLIENT_SECRET]
     if not all(required_vars):
-        return func.HttpResponse("Configuration is incomplete", status_code=500)
+        return func.HttpResponse(
+                json.dumps({"error": "Configuration is incomplete"}),
+                status_code=500,
+                mimetype="application/json"
+            )
 
     # Retrieve keys
     keys = get_function_keys(function_name)
     if not keys:
-        return func.HttpResponse("Function not found", status_code=404)
+        return func.HttpResponse(
+                    json.dumps({"error": "Function not found"}),
+                    status_code=404,
+                    mimetype="application/json"
+                )
 
     # Return specific key
     if key_value := keys.get(key_name):
