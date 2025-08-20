@@ -85,7 +85,7 @@ async def run_azure_operation(func, *args, **kwargs):
 
 @create_vm_s_forgejo_bp.route(route="create_vm_s_forgejo", methods=["POST", "GET"], auth_level="function")
 async def create_vm_s_forgejo(req: HttpRequest) -> HttpResponse:
-    logging.info('Processing create_vm request...')
+    logging.info('Processing create_vm_s_forgejo request...')
     try:
         try:
             req_body = req.get_json()
