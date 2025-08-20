@@ -104,14 +104,28 @@ async def create_vm_s_forgejo(req: HttpRequest) -> HttpResponse:
         RECIPIENT_EMAILS = req_body.get('recipient_emails') or req.params.get('recipient_emails')
         hook_url = req_body.get('hook_url') or req.params.get('hook_url') or ''
         
-        # Validate required parameters
-        if not all([vm_name, resource_group, domain, location, RECIPIENT_EMAILS]):
-            return HttpResponse(
-                json.dumps({"error": "Missing required parameters"}),
+        # Check for missing parameters
+        missing_params = []
+        if not vm_name:
+            missing_params.append('vm_name')
+        if not resource_group:
+            missing_params.append('resource_group')
+        if not domain:
+            missing_params.append('domain')
+        if not location:
+            missing_params.append('location')
+        if not RECIPIENT_EMAILS:
+            missing_params.append('RECIPIENT_EMAILS')
+
+        if missing_params:
+            error_msg = f"Missing parameters: {', '.join(missing_params)}"
+            logger.error(error_msg)
+            return func.HttpResponse(
+                json.dumps({"error": error_msg}),
                 status_code=400,
                 mimetype="application/json"
             )
-        
+    
         # Domain validation
         if '.' not in domain or domain.startswith('.') or len(domain.split('.')) > 2:
             return HttpResponse(
