@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import Optional
@@ -61,9 +62,19 @@ def api_gateway(req: func.HttpRequest) -> func.HttpResponse:
     function_name = req_body.get('function_name') or req.params.get('function_name')
     key_name = req_body.get('key_name') or req.params.get('key_name') or 'default'  # default key if not provided
    
+    # Check for missing parameters
+    missing_params = []
     if not function_name:
-        return func.HttpResponse("Function name is required", status_code=400)
+        missing_params.append('function_name')
 
+    if missing_params:
+        error_msg = f"Missing parameters: {', '.join(missing_params)}"
+        return func.HttpResponse(
+            json.dumps({"error": error_msg}),
+            status_code=400,
+            mimetype="application/json"
+        )
+        
     # Validate configuration
     required_vars = [Config.SUBSCRIPTION_ID, Config.RESOURCE_GROUP, 
                     Config.API_NAME, Config.CLIENT_ID, Config.CLIENT_SECRET]
