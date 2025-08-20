@@ -50,11 +50,17 @@ def get_function_keys(function_name: str) -> Optional[dict]:
         return None
 
 # HTTP trigger function
-@api_gateway_bp.route(route="keys/{function_name}", methods=["GET"], auth_level=func.AuthLevel.FUNCTION)
-def get_function_keys_http(req: func.HttpRequest) -> func.HttpResponse:
-    function_name = req.route_params.get('function_name')
-    key_name = req.params.get('key_name', 'default')
+@api_gateway_bp.route(route="api_gateway", methods=["GET"], auth_level=func.AuthLevel.FUNCTION)
+def api_gateway(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        req_body = req.get_json()
+    except ValueError:
+        req_body = {}
 
+    # Accept function_name from query params or JSON body
+    function_name = req_body.get('function_name') or req.params.get('function_name')
+    key_name = req_body.get('key_name') or req.params.get('key_name') or 'default'  # default key if not provided
+   
     if not function_name:
         return func.HttpResponse("Function name is required", status_code=400)
 
