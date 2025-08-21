@@ -1289,38 +1289,58 @@ async def post_status_update(hook_url: str, status_data: dict) -> dict:
     step = status_data.get("details", {}).get("step", "unknown")
     print_info(f"Sending status update for step: {step}")
     
-    # Retry configuration
+    # Use a persistent session (better performance)
+    session = aiohttp.ClientSession()
+    
     max_retries = 3
     retry_delay = 2
     
     for attempt in range(1, max_retries + 1):
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    hook_url,
-                    json=status_data,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
+            async with session.post(
+                hook_url,
+                json=status_data,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
+                
+                # Always read the response text for debugging
+                response_text = await response.text()
+                print_info(f"HTTP {response.status}: {response_text[:200]}...")  # Log first 200 chars
+                
+                if response.status == 200:
+                    try:
+                        data = json.loads(response_text) if response_text else {}
                         return {
                             "success": True,
                             "status_url": data.get("status_url", ""),
                             "response": data
                         }
-                    else:
-                        error_msg = f"HTTP {response.status}"
+                    except json.JSONDecodeError:
+                        print_warn(f"Non-JSON response: {response_text}")
+                        return {
+                            "success": True,
+                            "status_url": "",
+                            "response": {"raw_response": response_text}
+                        }
+                else:
+                    error_msg = f"HTTP {response.status}: {response_text}"
+                    
         except (asyncio.TimeoutError, aiohttp.ClientConnectionError) as e:
-            error_msg = str(e)
+            error_msg = f"Connection error: {str(e)}"
         except Exception as e:
             error_msg = f"Unexpected error: {str(e)}"
+            import traceback
+            print_error(f"Traceback: {traceback.format_exc()}")
+        finally:
+            await session.close()
         
-        # Log failure and retry
+        # Log the specific error
+        print_warn(f"Status update attempt {attempt} failed: {error_msg}")
+        
         if attempt < max_retries:
-            print_warn(f"Status update failed (attempt {attempt}/{max_retries}): {error_msg}")
-            await asyncio.sleep(retry_delay * attempt)  # Exponential backoff
+            await asyncio.sleep(retry_delay * attempt)
         else:
-            print_error(f"Status update failed after {max_retries} attempts: {error_msg}")
+            print_error(f"Status update failed after {max_retries} attempts")
             return {
                 "success": False,
                 "error": error_msg,
