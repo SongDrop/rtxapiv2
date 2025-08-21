@@ -4,7 +4,7 @@ import os
 from typing import Optional
 
 import azure.functions as func
-from azure.identity import DefaultAzureCredential
+from azure.identity import ClientSecretCredential
 from azure.mgmt.web import WebSiteManagementClient
 from dotenv import load_dotenv
 
@@ -15,39 +15,53 @@ load_dotenv()
 #api_gateway_bp = func.FunctionApp()
 api_gateway_bp = func.Blueprint()
 
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+logger.info("Starting application initialization...")
+
+
 # Environment Configuration
 class Config:
-    SUBSCRIPTION_ID = os.getenv("AZURE_SUBSCRIPTION_ID")
-    TENANT_ID = os.getenv("AZURE_TENANT_ID")
-    RESOURCE_GROUP = os.getenv("API_RESOURCE_GROUP")
+    AZURE_SUBSCRIPTION_ID = os.getenv("AZURE_SUBSCRIPTION_ID")
+    AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID")
+    API_RESOURCE_GROUP = os.getenv("API_RESOURCE_GROUP")
     API_NAME = os.getenv("API_NAME")
-    CLIENT_ID = os.getenv("AZURE_APP_CLIENT_ID")
-    CLIENT_SECRET = os.getenv("AZURE_APP_CLIENT_SECRET")
+    AZURE_APP_CLIENT_ID = os.getenv("AZURE_APP_CLIENT_ID")
+    AZURE_APP_CLIENT_SECRET = os.getenv("AZURE_APP_CLIENT_SECRET")
 
-# Initialize Azure credentials
-def get_azure_credential() -> DefaultAzureCredential:
-    return DefaultAzureCredential(
-        managed_identity_client_id=Config.CLIENT_ID,
-        exclude_environment_credential=True
-    )
-
-# WebSiteManagementClient factory
-def get_web_client() -> WebSiteManagementClient:
-    credential = get_azure_credential()
-    return WebSiteManagementClient(credential, Config.SUBSCRIPTION_ID)
-
-# Key retrieval service
-def get_function_keys(function_name: str) -> Optional[dict]:
+def get_function_keys(function_name):
     try:
-        web_client = get_web_client()
-        keys = web_client.web_apps.list_function_keys(
-            Config.RESOURCE_GROUP,
+        credentials = ClientSecretCredential(
+            client_id=Config.AZURE_APP_CLIENT_ID,
+            client_secret=Config.AZURE_APP_CLIENT_SECRET,
+            tenant_id=Config.AZURE_TENANT_ID
+        )
+        client = WebSiteManagementClient(credentials, Config.AZURE_SUBSCRIPTION_ID)
+
+        keys = client.web_apps.list_function_keys(
+            Config.API_RESOURCE_GROUP,
             Config.API_NAME,
             function_name
         )
-        return keys.additional_properties if keys else {}
-    except Exception as error:
-        logging.error("Failed to fetch function keys: %s", error, exc_info=True)
+
+        # keys is a dict-like object, get keys as dict
+        function_keys = {}
+        if keys:
+            if hasattr(keys, 'additional_properties'):
+                function_keys = keys.additional_properties
+            else:
+                function_keys = dict(keys)
+
+        logger.info(f"Retrieved keys: {list(function_keys.keys())}")
+        return function_keys
+
+    except Exception as e:
+        logger.error(f"Exception fetching keys for function '{function_name}': {e}", exc_info=True)
         return None
 
 # HTTP trigger function
@@ -94,8 +108,16 @@ def api_gateway(req: func.HttpRequest) -> func.HttpResponse:
                     mimetype="application/json"
                 )
 
-    # Return specific key
-    if key_value := keys.get(key_name):
-        return func.HttpResponse(key_value, mimetype='text/plain')
+    # Extract the single key requested
+    key_value = keys.get(key_name)
+    if not key_value:
+        return func.HttpResponse(
+            f"Key '{key_name}' not found for function '{function_name}'.",
+            status_code=404
+        )
     
-    return func.HttpResponse(f"Key '{key_name}' not found", status_code=404)
+    return func.HttpResponse(
+        json.dumps(key_value),
+        mimetype='application/json',
+        status_code=200
+    )
