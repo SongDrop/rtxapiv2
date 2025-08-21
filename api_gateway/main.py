@@ -90,8 +90,8 @@ def api_gateway(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     # Validate configuration
-    required_vars = [Config.SUBSCRIPTION_ID, Config.RESOURCE_GROUP, 
-                    Config.API_NAME, Config.CLIENT_ID, Config.CLIENT_SECRET]
+    required_vars = [Config.AZURE_SUBSCRIPTION_ID, Config.API_RESOURCE_GROUP, 
+                    Config.API_NAME, Config.AZURE_APP_CLIENT_ID, Config.AZURE_APP_CLIENT_SECRET]
     if not all(required_vars):
         return func.HttpResponse(
                 json.dumps({"error": "Configuration is incomplete"}),
