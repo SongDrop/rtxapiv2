@@ -673,6 +673,11 @@ async def provision_vm_background(
             )
             return
 
+        # Add this right before creating the VM in V2
+        print_info(f"Creating VM with NIC ID: {nic.id}")
+        print_info(f"NSG ID for reference: {nsg.id}")
+
+
         # Create VM
         try:
             os_disk = {
