@@ -639,7 +639,7 @@ async def provision_vm_background(
                 f'{vm_name}-nic', 
                 nic_params
             )
-            nic = await run_azure_operation(nsg_operation.result)
+            nic = await run_azure_operation(nic_operation.result)
             
             await post_status_update(
                 hook_url=hook_url,
