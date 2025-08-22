@@ -191,6 +191,8 @@ async def create_vm_s_forgejo(req: HttpRequest) -> HttpResponse:
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "authenticating",
                         "message": "Authenticating with Azure"
@@ -239,6 +241,8 @@ async def create_vm_s_forgejo(req: HttpRequest) -> HttpResponse:
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "authentication_error",
                         "error": str(ex),
@@ -311,6 +315,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "storage_created",
                         "message": "Storage account created successfully",
@@ -326,6 +332,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "storage_creation_failed",
                         "error": error_msg,
@@ -362,6 +370,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "script_uploaded",
                         "message": "Setup script uploaded successfully"
@@ -376,6 +386,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "script_upload_failed",
                         "error": error_msg,
@@ -409,6 +421,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "vnet_created",
                         "message": f"Virtual network {vnet_name} created"
@@ -423,6 +437,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "vnet_creation_failed",
                         "error": error_msg,
@@ -450,6 +466,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "public_ip_created",
                         "message": f"Public IP {public_ip_name} created"
@@ -464,6 +482,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "public_ip_creation_failed",
                         "error": error_msg,
@@ -490,6 +510,8 @@ async def provision_vm_background(
                     status_data={
                         "vm_name": vm_name,
                         "status": "provisioning",
+                        "resource_group": resource_group,
+                        "location": location,
                         "details": {
                             "step": "nsg_found",
                             "message": f"Using existing NSG {nsg_name}"
@@ -510,6 +532,8 @@ async def provision_vm_background(
                     status_data={
                         "vm_name": vm_name,
                         "status": "provisioning",
+                        "resource_group": resource_group,
+                        "location": location,
                         "details": {
                             "step": "nsg_created",
                             "message": f"Created new NSG {nsg_name}"
@@ -534,6 +558,8 @@ async def provision_vm_background(
                                 status_data={
                                     "vm_name": vm_name,
                                     "status": "failed",
+                                    "resource_group": resource_group,
+                                    "location": location,
                                     "details": {
                                         "step": "nsg_rule_failed",
                                         "error": error_msg,
@@ -570,6 +596,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "nsg_rules_added",
                         "message": f"Added {len(PORTS_TO_OPEN)} security rules"
@@ -584,6 +612,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "nsg_configuration_failed",
                         "error": error_msg,
@@ -616,6 +646,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "nic_created",
                         "message": "Network interface created successfully"
@@ -630,6 +662,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "nic_creation_failed",
                         "error": error_msg,
@@ -675,6 +709,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "vm_created",
                         "message": "Virtual machine created successfully",
@@ -691,6 +727,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "vm_creation_failed",
                         "error": error_msg,
@@ -733,6 +771,8 @@ async def provision_vm_background(
                     status_data={
                         "vm_name": vm_name,
                         "status": "failed",
+                        "resource_group": resource_group,
+                        "location": location,
                         "details": {
                             "step": "public_ip_verification_failed",
                             "error": error_msg,
@@ -755,6 +795,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "public_ip_confirmed",
                         "message": f"VM public IP: {public_ip}"
@@ -784,6 +826,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "public_ip_verification_error",
                         "error": error_msg,
@@ -840,6 +884,8 @@ async def provision_vm_background(
                     status_data={
                         "vm_name": vm_name,
                         "status": "failed",
+                        "resource_group": resource_group,
+                        "location": location,
                         "details": {
                             "step": "ns_delegation_failed",
                             "error": error_msg,
@@ -869,6 +915,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "dns_records_created",
                         "message": "DNS records configured successfully"
@@ -898,6 +946,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "dns_configuration_failed",
                         "error": error_msg,
@@ -932,6 +982,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "extension_installed",
                         "message": "Custom script extension installed"
@@ -961,6 +1013,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "failed",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "extension_installation_failed",
                         "error": error_msg,
@@ -987,6 +1041,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "cleanup_complete",
                         "message": "Temporary resources cleaned up"
@@ -1001,6 +1057,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "cleanup_warning",
                         "warning": error_msg
@@ -1045,6 +1103,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "email_sent",
                         "message": "Completion email sent"
@@ -1059,6 +1119,8 @@ async def provision_vm_background(
                 status_data={
                     "vm_name": vm_name,
                     "status": "provisioning",
+                    "resource_group": resource_group,
+                    "location": location,
                     "details": {
                         "step": "email_failed",
                         "warning": error_msg
@@ -1095,6 +1157,8 @@ async def provision_vm_background(
             status_data={
                 "vm_name": vm_name,
                 "status": "failed",
+                "resource_group": resource_group,
+                "location": location,
                 "details": {
                     "step": "background_task_failed",
                     "error": error_msg,
